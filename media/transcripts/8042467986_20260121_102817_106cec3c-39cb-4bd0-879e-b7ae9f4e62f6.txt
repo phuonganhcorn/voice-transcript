@@ -1,0 +1,214 @@
+Welcome everyone. I'm Shah, and today I'm going to talk about agent skills and what makes this similar and different from MCP. So, before getting into that, I'll just do a quick intro. You might be wondering, who is this guy? Why should I listen to him? It's a great question. So, I got into 
+AI about 8 years ago when I was in grad school. I was doing applied AI research while I was getting my PhD. Then after grad school, I went and 
+worked at Toyota Financial Services, where I was a data scientist. And now for the past couple 
+years, I've been working for myself doing various entrepreneurial ventures. So, I did AI consulting 
+for a bit, helped over 100 clients, made a lot of educational content on YouTube. 
+So, maybe you guys originally heard about me through my YouTube channel, have this class on Maven, 
+have taught over 150 students, and I've also been doing a bit of solo app development, 
+built a couple of apps. But let's get into the main talk. So, we're going to talk about 
+agent skills and MCP, what makes them similar, what makes them different, when to use each, and things 
+like that. The starting point here is that AI models are getting smarter and smarter. So, this is a question 
+answering benchmark called GPQA, and on the x-axis we have time, on the y-axis we have performance. 
+And this blue line here is showing the best AI model on this benchmark. So, you can see when the 
+benchmark was first released, the best model was getting 30% performance on this data set, 
+but then over time, you can see it creeping up to 50%, then like 60, then 80, and modern 
+models, they're basically nailing this benchmark. So, they're getting like near 100% performance 
+on this question answering data set. So, this is like biology questions, chemistry questions, physics 
+questions. Pretty hard questions. I would probably score like 60 on this or something like that. But there 
+are other benchmarks. So, there's uh this popular one called software engineering benchmark. 
+So, this is like real-world GitHub issues and assessing model performance on those tasks. So, you can see it 
+started very poorly. Models were like at 20% performance on solving these real-world coding problems, 
+but now modern models are getting like 80% performance on this real-world coding benchmark. Models are 
+getting smarter and smarter here. But that's not the only bottleneck when it comes to applying these AI 
+models for real-world tasks. And ultimately, the models that we're using are only going to be as good as 
+the tools and the context that we give them. So, just to give a specific example of this, if we wanted to 
+use an LLM to find bugs in our codebase, if we say review my codebase for bugs, send that request to 
+our favorite AI model, it might say something like, I don't have access to your codebase. So, we're like, oh 
+okay, let's add a tool to the LLM that allows it to connect to my GitHub account. With this, it'll be able to 
+read through the code, find obvious bugs, but it's going to be still limited because it's only going to be 
+able to read the code. It's not actually going to be able to execute code. So, maybe we'll give it another tool 
+that gives the AI a code interpreter and the ability to run tests. So, now it won't just find obvious bugs, 
+it'll find silent bugs. It'll find bugs that aren't so obvious from just reading the code. Maybe even if the code runs fine, if you start clicking into the 
+app and start to actually use the app, then the failures come up, then errors start getting thrown. If we give it 
+the code interpreter and some tests, it'll be able to find these bugs. But we can take this one step further. 
+Maybe we don't just want the code to be able to run and work for our specific use case. Maybe we also want the 
+code to follow specific coding standards. So, we can give it a set of documentation that tells the model 
+how our team likes to write code or whatever it might be. We can see we went from the AI being completely 
+useless to being very helpful by just giving it the right tools and the right context about how we wanted 
+to do this specific task. This is what sparked the innovation of the model context protocol or MCP 
+for sure. So, MCP came out in November of 2024. So, it's been a little over a year now, and the idea here 
+was to have this open standard, this universal way to give large language models the right tools and context. The analogy that Anthropic uses for MCP is that it's 
+the USC port of AI applications. So, just like you have your laptop and you're able to connect to all 
+different types of devices using a USC port, MCP does the same kind of thing, but for AI applications. 
+Now you can give it access to a web search tool, you can give it access to some knowledge base. You can 
+give it access to your local directory or whatever it is. And MCP is the communication protocol that allows 
+that to happen. The ultimate use case of MCP is that it allows you to connect any AI application, 
+whether it's Claude Code or ChatGPT or Cursor to just about any tool that you use in your work, whether 
+it's Gmail, Slack, web search tool, Notion, and on and on and on. And if MCP didn't exist, basically Claude 
+or any of these AI apps would have to manually build integrations for all these tools. And on the flip 
+side, every one of these tools like Notion would have to build a specific integration to all of these AI apps. 
+But since MCP is a thing, there's this one single open standard that allows all the apps to talk to all the 
+tools. So, this is really helpful to go a little deeper on like how MCP works. It follows the so-called 
+client server architecture. This is just like if you go to a coffee shop, you are kind of like the client. 
+You're the person coming to the coffee shop and you want to order something, and then the barista is the 
+server. The way this communication typically works is that you will send a request to the server. So, you'll ask, 
+can I get a pumpkin spice latte? And the server will send back a response. They'll say, you got it, and 
+they'll give you the latte. This is exactly how MCP works, but instead of a person in a coffee shop and a 
+barista, you have an MCP client, which is the thing sending requests to an MCP server. So, the request here 
+might be, can you list all the tools that you have available. And then the MCP server will send back a response, 
+listing all the tools and the schema for those tools. This MCP client lives inside the AI application. It 
+lives inside Claude, it lives inside ChatGPT, it lives inside Cursor. And each client connects to a server, 
+which within it can have prompts, it can have resources like databases, and it can also have tools. So, it's 
+like a web search tool, read file tool, and whatever it might be. This is how MCP works, but there's a problem 
+with MCP, which is that it has a pretty token-heavy communication, meaning that when you send a request 
+to an MCP client, for example, you want the server to list all the tools it has available, the response 
+you get from the server is actually a pretty verbose piece of text. And it kind of needs to be like this 
+because the AI needs enough context to understand what tools are available, how they work, when they should be 
+applied, what schema it should use to make that tool call, and all that context to actually give the AI a 
+chance to use the tool effectively. While this does give the AI all the info that it needs, it is a lot of info. 
+So, maybe you're just trying to list directories and read files, but there are like other tools in the MCP 
+server that are not relevant to the use case. Like a web search tool or a code interpreter or reading emails 
+or sorting emails or on and on and on. There could be a lot of tools in the MCP server that are not relevant 
+to your use case, but they're taking up precious tokens. They're taking up precious space in the context 
+window, which not only racks up the cost of your requests that you're sending to the AI, but it also can 
+have a negative effect on its performance. And this is a phenomenon that people call context rot. This is one 
+thing that actually agent skills can help us with. And all this is is a folder with instructions in it that's 
+accessed by the agent as needed. So, the simplest version of this is we have a folder with whatever skill 
+we want to give to this agent. And in that folder, we'll have a file called skill.md. And then that skill.md 
+file might look something like this. This one's called Validate SAS ideas. It has a description, and then 
+it has some instructions here. But there are two key parts of these skill files. There's this so-called front 
+matter, so all this like metadata up here, and then the body of the skill. And so, the front matter, this is 
+what's loaded at startup. Right when the agent is spun up, it'll see the front matter. It'll see like this short 
+description of each of the skills available to it. Then the agent has the option to call upon a skill if it 
+is relevant. And only then will the agent load all the additional instructions that are in the body of the skill. 
+This is just like a better way to manage the context that you're giving to the agent. So, instead of just like 
+dumping all the context and the schema for every tool you have available in your MCP server, you might have 
+multiple skills for different types of tasks, and even though the AI will see the metadata up front, it's not 
+going to see all the details of that specific skill. But skills aren't just limited to this single file. You 
+can also have additional folders. So, maybe you want to put documentation in a folder called references, or 
+you want to put resources and other templates in a folder called assets, you can do that, and you can just tell 
+the agent that these folders exist.
+
+list in your skill.md file, and it'll be able to access it as needed.
+But you can also include code in these skills.
+So you can have a folder called scripts.
+In there, you can have executable code, whether it's Python or JavaScript, and then the agent can call these different scripts and workflows as needed.
+So just to give an example of what this might look like.
+Here we have our context window.
+So this is all the text that our AI can process at a single time.
+In there we'll have a system prompt, and then the skills will live inside the context window at startup.
+So again, this is just going to be that front matter.
+This is going to be the metadata for all our skills.
+So let's say we have five skills here.
+Then let's say the agent thinks it's relevant to call skill number three.
+Only then will the body of that skill be loaded into the context window.
+And then if there are specific files or scripts that the agent thinks is relevant to whatever the user is asking for, then it'll load in additional files, or it will execute bash commands to run specific scripts in the scripts folder.
+And so this idea of just giving the agent the context it needs for the next step, is something that Anthropic calls progressive disclosure.
+So this is just giving the agent enough context for the next step.
+We've already talked about this, but just to review, the first level of this is the skill.md metadata, that front matter.
+So this enters the context window at startup, and this will be about 100 tokens.
+Next we have level two.
+So if the agent thinks a particular skill is relevant to the task, it will grab the body of that skill.md file, and this could be up to 5,000 tokens.
+And then finally, we have all the other files and folder in the skills directory that the agent can access as needed, and there's practically no limit to the amount of context that we have in these additional folders and files.
+That's basically what MCP and skills are, and a little bit of how they work.
+So now let's talk about their similarities and differences.
+Now that we have that grounding.
+As we saw, MCP gives tools and context to large language models, while skills, they also give context to agents, but they're not necessarily giving them tools, they're giving them code.
+So they'll give them executable scripts that they can run as needed.
+MCP is an open standard that's widely adopted.
+Skills are now an open standard, so a few weeks ago, this was only available in Cloud Code and Anthropics applications, but I think last week or a couple of weeks ago, they released this as an open standard.
+While you can use skills in different AI applications, it's still the early days, so it's not as widely used as MCP. One of the key differences however, with MCP and skills, is that all tool schemas are injected into the context window on startup.
+So basically, when you initialize the MCP server, one of the first things that the client is going to do is to list all the tools the server has available.
+And so as we saw, this can be a tremendous amount of context that's added to the context window, even if most of it may not be relevant to the use case.
+While skills, the context and code are only loaded as needed in that progressive disclosure kind of way that we talked about on the previous slide.
+Another key difference is that for MCP, the LLM needs to have a MCP client, so there needs to be this MCP client living inside the AI application, and it needs the ability to call tools.
+However, for skills, the LLM needs to be able to access files and needs to have access to a code interpreter.
+So it can run those executable code.
+For MCP, to actually build a custom MCP server is going to require you to write some code, while for skills, you just need to write it in plain English.
+So just natural language.
+It's a bit easier to create custom skills as opposed to creating custom MCP servers.
+Those are the similarities and differences, but when do I actually use MCP versus skills?
+A helpful way to think about it is that MCP is more about giving tool access to  a agent, while skills are more about giving instructions to an agent.
+Just to make this a bit more concrete.
+An example here might be you connect Cloud to notion using notion's MCP server, while you'll use skills for executing specific tasks using notion.
+Notion's MCP server comes with a lot of great tools out of the box. It's like 15 different tools.
+But the agent may not necessarily know the best way to use these tools for your specific use case.
+It might need more guidance.
+So maybe you want to analyze user interviews, so there's like a specific workflow you want to follow there.
+You want to scope MVPs, you want to validate SAS ideas, or you want to repurpose content.
+So all these things live in specific places in your notion, and you want the agent to follow specific steps and combine specific tools when doing each of these tasks.
+So that's going to be a great use of skills.
+I think we're doing pretty good on time.
+I just wanted to call out a few resources here.
+So if you want to see some concrete examples of MCP servers and different skills, here are a couple of resources.
+So these are from Anthropic, and then there's also some third party repos.
+We will do Q&A, and we got like five minutes left, but I'm also happy to stick around as long as you guys have questions.
+But I'll just call the AI Builders boot camp.
+This is a six week program built for founders, tech consultants, technical PMs.
+What's inside the program?
+So you have six weekly live sessions with me.
+And so if you were to try to book like one-on-one consulting calls with me to do this, it would be like six grand.
+You get lifetime access to the builder community, you get lifetime access to the course materials.
+We'll have weekly projects and there's a capstone with a bunch of project examples.
+There's a free 30 AI Projects guide, plus a AI assistant that'll help you scope your different project ideas.
+Also 21 day guarantee, so if halfway through the program, you feel like this actually isn't what I thought it would be, a full refund, if not a good fit, no questions asked, no problem, no worries.
+Value of over $6,000, but the program is priced at 1245, and as a bonus for being part of the Lightning lesson, you can use the code Lightning 20 at checkout to get an additional 20% off, and it expires in 72 hours.
+So let's do Q&A. So I'll go through the chat, but also if you guys want to, we're a small group here, so feel free to just like raise your hand and you can come off mute to ask your questions.
+Ibrahim asked, let's say I want the agent to create a notion page for me with the MCP function written via tools for the skills.
+Do I have to connect it to individual MCP functions?
+Okay, so yeah, great question.
+The ability to create a notion page is actually within notion's MCP server.
+So you don't need to create a skill on doing the mechanics of that, because the agent will be able to do that using the MCP server.
+However, what you might want to write a skill for is if you're trying to create a specific type of page.
+So maybe you want, I'm just going to make something up, but you have an MVP idea, like a product idea. You want to make it a MVP, and then there's like certain sections you want on that spec sheet.
+Like you want to start with the customer avatar, you want to list out pain points, you want to list out possible solutions.
+You want to list out existing tools and how they might be solving that problem currently, and on and on and on.
+So maybe there like specific sections you want in that notion page, and maybe you want the agent to do web search as well.
+So not just create a notion page, but to do some web search and research to fill in the content of that notion page, and you you want that done in a specific way.
+So, you can see how skills start to be helpful when you're looking at tasks.
+You're doing a task that's not trivial.
+Like creating a notion page, I guess is a task, but it's pretty trivial, but creating a MVP spec sheet is more specific and might require multiple tool calls and bringing together different kinds of context.
+Would you expect agent creation tools like Anadane Mind Studio to support skills?
+I guess the short answer is, I don't know, but I wouldn't be surprised if they do adopt skills.
+Zultan asked, will skills come to Gemini soon?
+CLI, anti-gravity.
+So let's see.
+Right now it's with these tools.
+So yeah, I guess it's not with anti-gravity or any of Gemini stack, but we'll wait and see.
+So MCP came out in November of 2024 and it took like three to six months for MCP to become widely adopted.
+Maybe skills is going to follow a similar trajectory and skills have been around for a few months, and I feel like it's starting to get some traction.
+Maybe in the next three months it's really going to be widely adopted, and then over the next year, if it follows the same path as MCP, then I think it'll be as widely adopted as MCP is today.
+Currently agents are trained to follow instructions.
+How do skills benefit current instruction following agents?
+Skills are good when basically there's a lot of content that an agent needs to do a good job.
+So sure, now you can spin up an agent with a system prompt, but there's only like so much you can fit in that system prompt, and also like maybe the agent doesn't need all that context all the time.
+So if you're doing some kind of like customer support agent, it doesn't really make sense to have all the FAQs and all the different types of questions that they might ask in the system prompt.
+It might make sense to have all those references in a special folder that the support agent can just access as needed.
+And so really, skills just give us a better way to manage the context window.
+And so if it's a simple agent where you can fit everything in the system prompt, then skills aren't don't give you much marginal benefit.
+
+But if the amount of context is really tremendous, then organizing it via skill can make a lot of sense.
+Can you break down skills from first-person's perspective?
+Getting skills on surface level does not feel any different than the progressive disclosure orchestration.
+Do you see other differences?
+The thing with skills is that you could surely build a custom system that does exactly what skills do.
+Like you can build in this progressive disclosure with the custom system and do this orchestration yourself.
+But with skills, it already works like out of the box and as more and more people adopt it, it'll become easier.
+So it's less boilerplate and less scaffolding that you have to build yourself.
+You can just write these text files, put them in a folder with whatever skill name you like, and the thing will just work.
+So, you can definitely implement versions of this yourself, but if it's already working out of the box, there's no need to reinvent the wheel.
+If we create orchestration on our own spec files using frontmatter progressive disclosure, then do we need skills or cloud models edition and fine tune or some magic around skills?
+Oh, yeah, that's a good question.
+So it's not clear whether they specifically fine-tuned Claude to work with skills well.
+I think ultimately, there's going to be something in Claude's system prompt that tells it that it can access skills.
+And to Claude, a skill is just going to look like a tool and then they handle the orchestration details.
+It'll automatically pull in the frontmatter and then when it wants to call a specific skill, it's going to look like a tool call to Claude and then the AI application is going to handle putting the body into the context window.
+And then from there, Claude just has the ability to read files and read folders and print directory structures and things like that, and it knows where the skill is located.
+So that's how it can grab the additional context.
+Obviously, I don't know because I don't work at Anthropic and they don't release things like that, but my guess would be that they don't fine tune Claude specifically for skills.
+Now, I think that's one of the reasons why it can work as an open standard.
+We are five minutes over, so don't want to hold anyone hostage.
+Thanks for joining live.
+Thanks for the great questions.
+If you have any other questions that you didn't think of, feel free to drop me a note on LinkedIn.
+But yeah, thanks for joining.
